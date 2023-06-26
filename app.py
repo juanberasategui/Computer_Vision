@@ -2,7 +2,6 @@ import streamlit as st
 import numpy as np
 import pandas as pd
 from transformers import CLIPProcessor, CLIPModel
-#from transformers import AutoProcessor, AutoModelForCausalLM
 from PIL import Image
 
 categories = [
@@ -107,33 +106,19 @@ model_clip = CLIPModel.from_pretrained("openai/clip-vit-base-patch32")
 #Select Processor
 processor_clip = CLIPProcessor.from_pretrained("openai/clip-vit-base-patch32")
 
-def CLIP_MODEL(image):
-
-    inputs = processor_clip(text=categories, images=image, return_tensors="pt", padding=True) #text = to the labels in English
-
+def CLIP_MODEL(image, categories, norsk_categories):
+    inputs = processor_clip(text=categories, images=image, return_tensors="pt", padding=True)
     outputs = model_clip(**inputs)
-    logits_per_image = outputs.logits_per_image # this is the image-text similarity score
-    probs = logits_per_image.softmax(dim=1) # Return logits as probabilities (softmax)  
+    logits_per_image = outputs.logits_per_image
+    probs = logits_per_image.softmax(dim=1)
 
-    highest_prob = probs.max()
-    highest_prob_index = probs.argmax()
-
-    #find the label with the highest prob
-    label = norsk_categories[highest_prob_index]
-    return label
-
-#processor_GIT = AutoProcessor.from_pretrained("microsoft/git-large-r-coco")
-#model_GIT = AutoModelForCausalLM.from_pretrained("microsoft/git-large-r-coco")
-
-#Here we make a function that takes the image and returns the caption of the image
-#def GIT_MODEL(image):
+    sorted_probs, sorted_indices = torch.sort(probs, descending=True)
     
-    pixel_values = processor_GIT(images=image, return_tensors="pt").pixel_values
-       
-    generated_ids = model_GIT.generate(pixel_values=pixel_values, max_length=20)
-    generated_caption = processor_GIT.batch_decode(generated_ids, skip_special_tokens=True)[0]
+    top_indices = sorted_indices[0][:3]  # Get the indices of the top three probabilities
     
-    return generated_caption
+    top_categories = [norsk_categories[index] for index in top_indices]  # Get the corresponding categories
+    
+    return top_categories, top_indices
 
 
 
