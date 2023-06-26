@@ -1,8 +1,8 @@
-import transformers
 import streamlit as st
 import numpy as np
 import pandas as pd
 from transformers import CLIPProcessor, CLIPModel
+from transformers import BlipProcessor, BlipForConditionalGeneration
 from PIL import Image
 
 categories = [
@@ -101,17 +101,17 @@ norsk_categories = ['Vesker, kofferter og bager : : Trillekoffert',
  'Elektronikk og hvitevarer: Data og tilbehør: Bærbar PC',
  'Elektronikk og hvitevarer: TV og lyd: TV']
 
-
+ 
 #Select Model
-model = CLIPModel.from_pretrained("openai/clip-vit-base-patch32")
+model_clip = CLIPModel.from_pretrained("openai/clip-vit-base-patch32")
 #Select Processor
-processor = CLIPProcessor.from_pretrained("openai/clip-vit-base-patch32")
+processor_clip = CLIPProcessor.from_pretrained("openai/clip-vit-base-patch32")
 
 def CLIP_MODEL(image):
 
-    inputs = processor(text=categories, images=image, return_tensors="pt", padding=True) #text = to the labels in English
+    inputs = processor_clip(text=categories, images=image, return_tensors="pt", padding=True) #text = to the labels in English
 
-    outputs = model(**inputs)
+    outputs = model_clip(**inputs)
     logits_per_image = outputs.logits_per_image # this is the image-text similarity score
     probs = logits_per_image.softmax(dim=1) # Return logits as probabilities (softmax)  
 
@@ -121,6 +121,20 @@ def CLIP_MODEL(image):
     #find the label with the highest prob
     label = norsk_categories[highest_prob_index]
     return label
+
+processor_blip = BlipProcessor.from_pretrained("Salesforce/blip-image-captioning-base")
+model_blip = BlipForConditionalGeneration.from_pretrained("Salesforce/blip-image-captioning-base")
+
+#Here we make a function that takes the image and returns the caption of the image
+def BLIP_MODEL(image):
+
+    path = '/Users/juan.gallego/kami-summer-internship-2023/Images2/'+image
+    image = Image.open(path)
+    text = "a photography of"
+
+    inputs = processor_blip(image,text, return_tensors="pt")
+    out = model_blip.generate(**inputs)
+    return processor_blip.tokenizer.batch_decode(out, skip_special_tokens=True)
 
 
 
@@ -135,9 +149,12 @@ if img is not None:
     
     if st.button("Predikere"):
         label = CLIP_MODEL(image)
-        st.write(label)
+        st.write(label, )
 
-
+    if st.button("Caption"):
+        caption = BLIP_MODEL(image)
+        
+        st.write(caption, )
 
 
 
