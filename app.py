@@ -3,6 +3,7 @@ import numpy as np
 import pandas as pd
 from transformers import CLIPProcessor, CLIPModel
 from PIL import Image
+import torch
 
 categories = [
        'Bags, suitcases and bags: : Rolling suitcase',
