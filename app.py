@@ -1,7 +1,8 @@
 import streamlit as st
 import numpy as np
 import pandas as pd
-from transformers import CLIPProcessor, CLIPModel, AutoProcessor, AutoModelForCausalLM
+from transformers import CLIPProcessor, CLIPModel
+#from transformers import AutoProcessor, AutoModelForCausalLM
 from PIL import Image
 
 categories = [
@@ -121,16 +122,16 @@ def CLIP_MODEL(image):
     label = norsk_categories[highest_prob_index]
     return label
 
-processor_GIT = AutoProcessor.from_pretrained("microsoft/git-base-coco")
-model_GIT = AutoModelForCausalLM.from_pretrained("microsoft/git-base-coco")
+#processor_GIT = AutoProcessor.from_pretrained("microsoft/git-large-r-coco")
+#model_GIT = AutoModelForCausalLM.from_pretrained("microsoft/git-large-r-coco")
 
 #Here we make a function that takes the image and returns the caption of the image
-def GIT_MODEL(image):
+#def GIT_MODEL(image):
     
     pixel_values = processor_GIT(images=image, return_tensors="pt").pixel_values
        
-    generated_ids = model.generate(pixel_values=pixel_values, max_length=20)
-    generated_caption = processor.batch_decode(generated_ids, skip_special_tokens=True)[0]
+    generated_ids = model_GIT.generate(pixel_values=pixel_values, max_length=20)
+    generated_caption = processor_GIT.batch_decode(generated_ids, skip_special_tokens=True)[0]
     
     return generated_caption
 
@@ -150,9 +151,19 @@ if img is not None:
         st.write(label, )
 
     if st.button("Caption"):
-        caption = GIT_MODEL(image)
+        #caption = GIT_MODEL(image)
         
-        st.write(caption, )
+        st.write("Dette er ikke enda klar" )
+
+
+
+
+
+
+
+
+
+
 
 
 
