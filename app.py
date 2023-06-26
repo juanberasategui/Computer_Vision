@@ -4,6 +4,7 @@ import pandas as pd
 from transformers import CLIPProcessor, CLIPModel
 from transformers import BlipProcessor, BlipForConditionalGeneration
 from PIL import Image
+from transformers import AutoProcessor, AutoModelForCausalLM
 
 categories = [
        'Bags, suitcases and bags: : Rolling suitcase',
@@ -122,19 +123,18 @@ def CLIP_MODEL(image):
     label = norsk_categories[highest_prob_index]
     return label
 
-processor_blip = BlipProcessor.from_pretrained("Salesforce/blip-image-captioning-base")
-model_blip = BlipForConditionalGeneration.from_pretrained("Salesforce/blip-image-captioning-base")
+processor_GIT = AutoProcessor.from_pretrained("microsoft/git-base-coco")
+model_GIT = AutoModelForCausalLM.from_pretrained("microsoft/git-base-coco")
 
 #Here we make a function that takes the image and returns the caption of the image
-def BLIP_MODEL(image):
-
-    path = '/Users/juan.gallego/kami-summer-internship-2023/Images2/'+image
-    image = Image.open(path)
-    text = "a photography of"
-
-    inputs = processor_blip(image,text, return_tensors="pt")
-    out = model_blip.generate(**inputs)
-    return processor_blip.tokenizer.batch_decode(out, skip_special_tokens=True)
+def GIT_MODEL(image):
+    
+    pixel_values = processor_GIT(images=image, return_tensors="pt").pixel_values
+       
+    generated_ids = model.generate(pixel_values=pixel_values, max_length=20)
+    generated_caption = processor.batch_decode(generated_ids, skip_special_tokens=True)[0]
+    
+    return generated_caption
 
 
 
@@ -152,7 +152,7 @@ if img is not None:
         st.write(label, )
 
     if st.button("Caption"):
-        caption = BLIP_MODEL(image)
+        caption = GIT_MODEL(image)
         
         st.write(caption, )
 
