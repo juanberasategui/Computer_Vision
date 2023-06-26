@@ -2,7 +2,6 @@ import streamlit as st
 import numpy as np
 import pandas as pd
 from transformers import CLIPProcessor, CLIPModel
-from transformers import BlipProcessor, BlipForConditionalGeneration
 from PIL import Image
 from transformers import AutoProcessor, AutoModelForCausalLM
 
