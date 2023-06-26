@@ -143,17 +143,18 @@ img = st.file_uploader("Last opp et bilde", type=["png", "jpg", "jpeg"])
 
 if img is not None:
     image = Image.open(img)
-
     st.image(img, caption="Uploaded Image", use_column_width=True)
-    
-    if st.button("Predikere"):
-        label = CLIP_MODEL(image)
-        st.write(label, )
 
-    if st.button("Caption"):
-        #caption = GIT_MODEL(image)
-        
-        st.write("Dette er ikke enda klar" )
+    predikere_clicked = st.button("Predikere")
+    #caption_clicked = st.button("Caption")
+
+    if predikere_clicked:
+        #delete the "Predikere" button
+        labels, indices = CLIP_MODEL(image, categories, norsk_categories)
+        st.write("Velg kategori")  # Create an empty placeholder to hide the "Predikere" button
+        button1= st.button(str(labels[0]))
+        button2= st.button(str(labels[1]))
+        button3= st.button(str(labels[2]))
 
 
 
