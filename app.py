@@ -1,9 +1,8 @@
 import streamlit as st
 import numpy as np
 import pandas as pd
-from transformers import CLIPProcessor, CLIPModel
+from transformers import CLIPProcessor, CLIPModel, AutoProcessor, AutoModelForCausalLM
 from PIL import Image
-from transformers import AutoProcessor, AutoModelForCausalLM
 
 categories = [
        'Bags, suitcases and bags: : Rolling suitcase',
