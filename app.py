@@ -186,20 +186,3 @@ if img is not None:
     if st.session_state["predikere"] and st.session_state["button3"] and st.session_state["button9"]:
         st.write("Du har valgt: "+str(labels[2])+ "og"+ str(labels2[1]) + ", velg en underkategori")
         st.write("Takk vi er ferdig")
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
