@@ -1,3 +1,4 @@
+
 import streamlit as st
 import numpy as np
 import pandas as pd
@@ -21,15 +22,15 @@ norsk_categories = ['Elektronikk og hvitevarer', 'Klokker', 'Hjem, hage og oppus
        'Kontanter, lommebok og gavekort']
 
 cat_dict = {'Elektronikk og hvitevarer': ['Hvitevarer', 'Diverse småelektronikk', 'Spill og konsoll',
-                                           'Mobiltelefon, nettbrett og tilbehør', 'TV og lyd', 'Annet',
+                                           'Mobiltelefon, nettbrett og tilbehør', 'TV og lyd', 
                                              'Sport og friluft elektronikk', 'Foto og video', 'Husholdningsapparater',
                                                'Data og tilbehør'], 'Klokker': [None], 'Hjem, hage og oppussing': 
                                                ['Kjøkkenutstyr ','Sikkerhet og alarm', 'Soveromsutstyr', 'Byggevarer',
-                                                 'Oppvarming og ventilasjon', 'Verktøy og tilbehør', 'Baderomsutstyr', 'Annet',
+                                                 'Oppvarming og ventilasjon', 'Verktøy og tilbehør', 'Baderomsutstyr', 
                                                    'Hage og uteområde'], 'Briller og solbriller': [None], 'Møbler og interiør':
-                                                     ['Tepper og tekstiler', 'Møbler', 'Dekorasjon og pyntegjenstander', 'Annet',
+                                                     ['Tepper og tekstiler', 'Møbler', 'Dekorasjon og pyntegjenstander',
                                                        'Lamper/belysning'], 'Sport og friluftsliv': ['Vannsport', 'Trimapparat/styrkeutstyr',
-                                                        'Våpen og tilbehør', 'Vintersport', 'Sykkel og tilbehør', 'Annet', 'Sport og ballspill', 'Jakt, fiske og friluft'], 'Klær, sko og tilbehør': ['Klær', 'Annet', 'Sko', 'Tilbehør', 'Hodeplagg'], 'Vesker, kofferter og bager ': [None], 'Smykker og lignende': [None], 'Fritid, hobby og underholdning': [None], 'Baby- og barneutstyr': [None], 'Kjøretøy og tilbehør': ['Tilbehør til bil', 'Tilbehør til båt', 'Annet', 'Tilbehør til caravan', 'Tilbehør til MC'], 'Personlig pleie': [None], 'Dyreutstyr': [None], 'Annet': [None], 'Kunst og antikviteter': [None], 'Mat og drikke': [None], 'Kontanter, lommebok og gavekort': ['Kontanter', 'Lommebok']}
+                                                        'Våpen og tilbehør', 'Vintersport', 'Sykkel og tilbehør',  'Sport og ballspill', 'Jakt, fiske og friluft'], 'Klær, sko og tilbehør': ['Klær', 'Sko', 'Tilbehør', 'Hodeplagg'], 'Vesker, kofferter og bager ': [None], 'Smykker og lignende': [None], 'Fritid, hobby og underholdning': [None], 'Baby- og barneutstyr': [None], 'Kjøretøy og tilbehør': ['Tilbehør til bil', 'Tilbehør til båt', 'Tilbehør til caravan', 'Tilbehør til MC'], 'Personlig pleie': [None], 'Dyreutstyr': [None], 'Kunst og antikviteter': [None], 'Mat og drikke': [None], 'Kontanter, lommebok og gavekort': ['Kontanter', 'Lommebok']}
  
 
 cat_dict_english = {
@@ -95,81 +96,96 @@ def CLIP_MODEL(image, categories, norsk_categories):
 
 #ARCHITECTURE OF THE APP
 
-if "button_clicked" not in st.session_state:
-    st.session_state.button_clicked = False
+buttons = ["button1", "button2", "button3", "button4", "button5", "button6", "button7", "button8", "button9"]
 
-def callback():
-    "Button clicked!"
-    st.session_state.button_clicked = True
+if "predikere" not in st.session_state:
+    st.session_state["predikere"] = False
+
+for button in buttons:
+    if button not in st.session_state:
+        st.session_state[button] = False
 
 
-
-st.title("Hva er bildet? :camera:")
+st.title("Hva er bildet? :camera: :scissors: ")
 
 img = st.file_uploader("Last opp et bilde", type=["png", "jpg", "jpeg"])
-
 
 if img is not None:
     image = Image.open(img)
     st.image(img, caption="Uploaded Image", use_column_width=True)
 
-    predikere_clicked = st.button("Predikere", on_click=callback) or st.session_state.button_clicked
-    #caption_clicked = st.button("Caption")
+    if st.button("Predikere"):
+        st.session_state["predikere"] = not st.session_state["predikere"]
 
-
-    if predikere_clicked:
-        #delete the "Predikere" button
+    if st.session_state["predikere"]:
         labels, indices = CLIP_MODEL(image, categories, norsk_categories)
-        st.write("Velg kategori")  # Create an empty placeholder to hide the "Predikere" button
-        button1= st.button(str(labels[0]))
-        button2= st.button(str(labels[1]))
-        button3= st.button(str(labels[2]))
+        if st.button(str(labels[0])):
+            st.session_state["button1"] = not st.session_state["button1"]
+        if st.button(str(labels[1])):
+            st.session_state["button2"] = not st.session_state["button2"]
+        if st.button(str(labels[2])):
+            st.session_state["button3"] = not st.session_state["button3"]
+    
+    if st.session_state["predikere"] and st.session_state["button1"]:
+        st.write("Du har valgt: " + str(labels[0]) + ", velg en underkategori")
+        eng_category = categories[int(indices[0])]
+        norsk_category = norsk_categories[int(indices[0])]
+        categories = cat_dict_english[eng_category]
+        norsk_categories = cat_dict[norsk_category]
+        labels2, indices2 = CLIP_MODEL(image, categories, norsk_categories)
+        if st.button(str(labels2[0])):
+            st.session_state["button4"] = not st.session_state["button4"]
+        if st.button(str(labels2[1])):
+            st.session_state["button5"] = not st.session_state["button5"]
+    
+    if st.session_state["predikere"] and st.session_state["button2"]:
+        st.write("Du har valgt: " + str(labels[1]) + ", velg en underkategori")
+        eng_category = categories[int(indices[1])]
+        norsk_category = norsk_categories[int(indices[1])]
+        categories = cat_dict_english[eng_category]
+        norsk_categories = cat_dict[norsk_category]
+        labels2, indices = CLIP_MODEL(image, categories, norsk_categories)
+        if st.button(str(labels2[0])):
+            st.session_state["button6"] = not st.session_state["button6"]
+        if st.button(str(labels[1])):
+            st.session_state["button7"] = not st.session_state["button7"]
+    
+    if st.session_state["predikere"] and st.session_state["button3"]:
+        st.write("Du har valgt: " + str(labels[2]) + ", velg en underkategori")
+        eng_category = categories[int(indices[2])]
+        norsk_category = norsk_categories[int(indices[2])]
+        categories = cat_dict_english[eng_category]
+        norsk_categories = cat_dict[norsk_category]
+        labels2, indices = CLIP_MODEL(image, categories, norsk_categories)
+        if st.button(str(labels2[0])):
+            st.session_state["button8"] = not st.session_state["button8"]
+        if st.button(str(labels2[1])):
+            st.session_state["button9"] = not st.session_state["button9"]
 
-        if button1:
-            st.write("Velg subkategori")
-            eng_category = categories[int(indices[0])]
-            norsk_category = norsk_categories[int(indices[0])]
-            categories = cat_dict_english[eng_category]
-            if len(categories)==1:
-                st.write("Thank, we are finished")
-            else:
-                norsk_categories = cat_dict[norsk_category]
-                labels, indices = CLIP_MODEL(image, categories, norsk_categories)
-                st.write("Velg subkategori")
-                button4= st.button(str(labels[0]))
-                button5= st.button(str(labels[1]))
-        
-        if button2:
-            eng_category = categories[int(indices[1])]
-            norsk_category = norsk_categories[int(indices[1])]
-            categories = cat_dict_english[eng_category]
-            if len(categories)==1:
-                st.write("Thank, we are finished")
-            else:
-                norsk_categories = cat_dict[norsk_category]
-                labels, indices = CLIP_MODEL(image, categories, norsk_categories)
-                st.write("Velg subkategori")
-                button6= st.button(str(labels[0]))
-                button7= st.button(str(labels[1]))
-        
-        if button3:
-            eng_category = categories[int(indices[2])]
-            norsk_category = norsk_categories[int(indices[2])]
-            categories = cat_dict_english[eng_category]
-            if len(categories)==1:
-                st.write("Thank, we are finished")
-            else:
-                norsk_categories = cat_dict[norsk_category]
-                labels, indices = CLIP_MODEL(image, categories, norsk_categories)
-                st.write("Velg subkategori")
-                button8= st.button(str(labels[0]))
-                button9= st.button(str(labels[1]))
-        
+    
+    if st.session_state["predikere"] and st.session_state["button1"] and st.session_state["button4"]:
+        st.write("Du har valgt: "+str(labels[0])+ "og"+ str(labels2[0]) + ", velg en underkategori")
+        st.write("Takk vi er ferdig")
+    
+    if st.session_state["predikere"] and st.session_state["button1"] and st.session_state["button5"]:
+        st.write("Du har valgt: "+str(labels[0])+ "og"+ str(labels2[1]) + ", velg en underkategori")
+        st.write("Takk vi er ferdig")
+    
+    if st.session_state["predikere"] and st.session_state["button2"] and st.session_state["button6"]:
+        st.write("Du har valgt: "+str(labels[1])+ "og"+ str(labels2[0]) + ", velg en underkategori")
+        st.write("Takk vi er ferdig")
 
+    if st.session_state["predikere"] and st.session_state["button2"] and st.session_state["button7"]:
+        st.write("Du har valgt: "+str(labels[1])+ "og"+ str(labels2[1]) + ", velg en underkategori")
+        st.write("Takk vi er ferdig")
 
-
-
-
+    if st.session_state["predikere"] and st.session_state["button3"] and st.session_state["button8"]:
+        st.write("Du har valgt: "+str(labels[2])+ "og"+ str(labels2[0]) + ", velg en underkategori")
+        st.write("Takk vi er ferdig")
+    
+    if st.session_state["predikere"] and st.session_state["button3"] and st.session_state["button9"]:
+        st.write("Du har valgt: "+str(labels[2])+ "og"+ str(labels2[1]) + ", velg en underkategori")
+        st.write("Takk vi er ferdig")
     
 
 
