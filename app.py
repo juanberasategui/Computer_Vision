@@ -1,13 +1,12 @@
 ## APP is live @ maskinsyn.streamlit.app
-
-
 import streamlit as st
 import numpy as np
 import pandas as pd
 from transformers import CLIPProcessor, CLIPModel
-#from transformers import AutoProcessor, AutoModelForCausalLM
 from PIL import Image
 import torch
+import torchvision.transforms as transforms
+
 
 categories = ['Electronics and appliances', 'Watches', 'Home, garden and renovation', 'Glasses and sunglasses',
         'Furniture and interior', 'Sports and outdoor life', 'Clothing, shoes and accessories', 'Bags, suitcases and bags',
@@ -85,8 +84,6 @@ def CLIP_MODEL(image, categories, norsk_categories):
 #Define the CLIP funciton
 def CLIP_MODEL2(image, categories, norsk_categories):
     
-    
-
     inputs = processor_clip(text=categories, images=image, return_tensors="pt", padding=True)
     outputs = model_clip(**inputs)
     logits_per_image = outputs.logits_per_image
@@ -99,6 +96,38 @@ def CLIP_MODEL2(image, categories, norsk_categories):
     
     #returns a list with lenght = len(categories), and each element is the probability of the image belonging to that category
     return probs
+
+
+#This models differenciates between document and object
+def predict_m1_model(image_path, modell):
+    # Define the image transformation
+    img_width, img_height = 224, 224
+    test_transform = transforms.Compose([
+        transforms.Resize((img_width, img_height)),
+        transforms.ToTensor(),
+        transforms.Normalize(mean=[0.485, 0.456, 0.406], 
+                             std=[0.229, 0.224, 0.225])
+    ])
+    # Open and transform the image
+    image = Image.open(image_path).convert('RGB')
+    image_tensor = test_transform(image)
+
+    # Add an extra dimension to represent batch size
+    image_tensor = image_tensor.unsqueeze(0)
+
+    # Load the pre-trained model
+    model_m1 = torch.load(modell)
+    model_m1.eval()
+
+    # Perform inference
+    with torch.no_grad():
+        output = model_m1(image_tensor)
+
+    # Get the predicted class index
+    _, predicted_idx = torch.max(output, 1)
+
+    # Print the predicted class index
+    return predicted_idx.item()
 
 
 #processor_GIT = AutoProcessor.from_pretrained("microsoft/git-large-r-coco")
@@ -123,9 +152,7 @@ def CLIP_MODEL2(image, categories, norsk_categories):
 if "button_clicked" not in st.session_state:
     st.session_state.button_clicked = False
 
-def callback():
-    "Button clicked!"
-    st.session_state.button_clicked = True
+
 
 #initilization of session state for the buttons, track parameters
 #to add values, check that they're not already in a session state (so that we don't hardcode values every time script runs)
@@ -163,89 +190,98 @@ st.title("ML-demo! :shrimp:")
 st.write("Hva er bildet? :camera: :scissors: ")
 
 
-img = st.file_uploader("Last opp et bilde", type=["png", "jpg", "jpeg"], accept_multiple_files=True)
+model_m1 = st.file_uploader('Last opp M1 modell', type=["pth"])
 
-if img is not None:
+
+img = st.file_uploader("Last opp et eller flere bilder", type=["png", "jpg", "jpeg"], accept_multiple_files=True)
+
+if img is not None and model_m1 is not None:
     length = len(img)#check the amount of uploaded files
     if length == 1: #if only one file is uploaded
-        image = Image.open(img)
+        image = Image.open(img[0])
         st.image(img, caption="Uploaded Image", use_column_width=True)
 
-        if st.button("Predikere"):
-            #update a value we have stored in our state (boolean switches back and forth between True and False)
-            st.session_state["predikere"] = not st.session_state["predikere"]
+        object_doc=predict_m1_model(img[0], model_m1)
 
-        if st.session_state["predikere"]:
-            labels, indices = CLIP_MODEL(image, categories, norsk_categories)
-            if st.button(str(labels[0])):
-                st.session_state["button1"] = not st.session_state["button1"]
-            if st.button(str(labels[1])):
-                st.session_state["button2"] = not st.session_state["button2"]
-            if st.button(str(labels[2])):
-                st.session_state["button3"] = not st.session_state["button3"]
-        
-        if st.session_state["predikere"] and st.session_state["button1"]:
-            st.write("Du har valgt: " + str(labels[0]) + ", velg en underkategori")
-            #retrieve relevant subcategories from list of categories
-            eng_category = categories[int(indices[0])]
-            norsk_category = norsk_categories[int(indices[0])]
-            categories = cat_dict_english[eng_category]
-            norsk_categories = cat_dict[norsk_category]
-            #if there are relevant subcategories, run CLIP again with subcategories, instead of categories (new prediction)
-            labels2, indices2 = CLIP_MODEL(image, categories, norsk_categories)
-            if st.button(str(labels2[0])):
-                st.session_state["button4"] = not st.session_state["button4"]
-            if st.button(str(labels2[1])):
-                st.session_state["button5"] = not st.session_state["button5"]
-        
-        if st.session_state["predikere"] and st.session_state["button2"]:
-            st.write("Du har valgt: " + str(labels[1]) + ", velg en underkategori")
-            eng_category = categories[int(indices[1])]
-            norsk_category = norsk_categories[int(indices[1])]
-            categories = cat_dict_english[eng_category]
-            norsk_categories = cat_dict[norsk_category]
-            labels2, indices = CLIP_MODEL(image, categories, norsk_categories)
-            if st.button(str(labels2[0])):
-                st.session_state["button6"] = not st.session_state["button6"]
-            if st.button(str(labels[1])):
-                st.session_state["button7"] = not st.session_state["button7"]
-        
-        if st.session_state["predikere"] and st.session_state["button3"]:
-            st.write("Du har valgt: " + str(labels[2]) + ", velg en underkategori")
-            eng_category = categories[int(indices[2])]
-            norsk_category = norsk_categories[int(indices[2])]
-            categories = cat_dict_english[eng_category]
-            norsk_categories = cat_dict[norsk_category]
-            labels2, indices = CLIP_MODEL(image, categories, norsk_categories)
-            if st.button(str(labels2[0])):
-                st.session_state["button8"] = not st.session_state["button8"]
-            if st.button(str(labels2[1])):
-                st.session_state["button9"] = not st.session_state["button9"]
+        if object_doc == 0:
+            st.write("Dette er et dokument")
+        else:
 
-        
-        if st.session_state["predikere"] and st.session_state["button1"] and st.session_state["button4"]:
-            st.write("Du har valgt: "+str(labels[0])+ "og"+ str(labels2[0]) + ", velg en underkategori")
-            st.write("**Takk vi er ferdig**")
-        
-        if st.session_state["predikere"] and st.session_state["button1"] and st.session_state["button5"]:
-            st.write("Du har valgt: "+str(labels[0])+ "og"+ str(labels2[1]) + ", velg en underkategori")
-            st.write("**Takk vi er ferdig**")
-        
-        if st.session_state["predikere"] and st.session_state["button2"] and st.session_state["button6"]:
-            st.write("Du har valgt: "+str(labels[1])+ "og"+ str(labels2[0]) + ", velg en underkategori")
-            st.write("** vi er ferdig**")
+            if st.button("Predikere"):
+                #update a value we have stored in our state (boolean switches back and forth between True and False)
+                st.session_state["predikere"] = not st.session_state["predikere"]
 
-        if st.session_state["predikere"] and st.session_state["button2"] and st.session_state["button7"]:
-            st.write("Du har valgt: "+str(labels[1])+ "og"+ str(labels2[1]) + ", velg en underkategori")
-            st.write("**Takk vi er ferdig**")
+            if st.session_state["predikere"]:
+                labels, indices = CLIP_MODEL(image, categories, norsk_categories)
+                if st.button(str(labels[0])):
+                    st.session_state["button1"] = not st.session_state["button1"]
+                if st.button(str(labels[1])):
+                    st.session_state["button2"] = not st.session_state["button2"]
+                if st.button(str(labels[2])):
+                    st.session_state["button3"] = not st.session_state["button3"]
+            
+            if st.session_state["predikere"] and st.session_state["button1"]:
+                st.write("Du har valgt: " + str(labels[0]) + ", velg en underkategori")
+                #retrieve relevant subcategories from list of categories
+                eng_category = categories[int(indices[0])]
+                norsk_category = norsk_categories[int(indices[0])]
+                categories = cat_dict_english[eng_category]
+                norsk_categories = cat_dict[norsk_category]
+                #if there are relevant subcategories, run CLIP again with subcategories, instead of categories (new prediction)
+                labels2, indices2 = CLIP_MODEL(image, categories, norsk_categories)
+                if st.button(str(labels2[0])):
+                    st.session_state["button4"] = not st.session_state["button4"]
+                if st.button(str(labels2[1])):
+                    st.session_state["button5"] = not st.session_state["button5"]
+            
+            if st.session_state["predikere"] and st.session_state["button2"]:
+                st.write("Du har valgt: " + str(labels[1]) + ", velg en underkategori")
+                eng_category = categories[int(indices[1])]
+                norsk_category = norsk_categories[int(indices[1])]
+                categories = cat_dict_english[eng_category]
+                norsk_categories = cat_dict[norsk_category]
+                labels2, indices = CLIP_MODEL(image, categories, norsk_categories)
+                if st.button(str(labels2[0])):
+                    st.session_state["button6"] = not st.session_state["button6"]
+                if st.button(str(labels[1])):
+                    st.session_state["button7"] = not st.session_state["button7"]
+            
+            if st.session_state["predikere"] and st.session_state["button3"]:
+                st.write("Du har valgt: " + str(labels[2]) + ", velg en underkategori")
+                eng_category = categories[int(indices[2])]
+                norsk_category = norsk_categories[int(indices[2])]
+                categories = cat_dict_english[eng_category]
+                norsk_categories = cat_dict[norsk_category]
+                labels2, indices = CLIP_MODEL(image, categories, norsk_categories)
+                if st.button(str(labels2[0])):
+                    st.session_state["button8"] = not st.session_state["button8"]
+                if st.button(str(labels2[1])):
+                    st.session_state["button9"] = not st.session_state["button9"]
 
-        if st.session_state["predikere"] and st.session_state["button3"] and st.session_state["button8"]:
-            st.write("Du har valgt: "+str(labels[2])+ "og"+ str(labels2[0]) + ", velg en underkategori")
-            st.write("**Takk, vi er ferdig**")
-        
-        if st.session_state["predikere"] and st.session_state["button3"] and st.session_state["button9"]:
-            st.write("Du har valgt: "+str(labels[2])+ "og"+ str(labels2[1]) + ", velg en underkategori")
-            st.write("**Takk, vi er ferdig**")
+            
+            if st.session_state["predikere"] and st.session_state["button1"] and st.session_state["button4"]:
+                st.write("Du har valgt: "+str(labels[0])+ "og"+ str(labels2[0]) + ", velg en underkategori")
+                st.write("**Takk vi er ferdig**")
+            
+            if st.session_state["predikere"] and st.session_state["button1"] and st.session_state["button5"]:
+                st.write("Du har valgt: "+str(labels[0])+ "og"+ str(labels2[1]) + ", velg en underkategori")
+                st.write("**Takk vi er ferdig**")
+            
+            if st.session_state["predikere"] and st.session_state["button2"] and st.session_state["button6"]:
+                st.write("Du har valgt: "+str(labels[1])+ "og"+ str(labels2[0]) + ", velg en underkategori")
+                st.write("** vi er ferdig**")
+
+            if st.session_state["predikere"] and st.session_state["button2"] and st.session_state["button7"]:
+                st.write("Du har valgt: "+str(labels[1])+ "og"+ str(labels2[1]) + ", velg en underkategori")
+                st.write("**Takk vi er ferdig**")
+
+            if st.session_state["predikere"] and st.session_state["button3"] and st.session_state["button8"]:
+                st.write("Du har valgt: "+str(labels[2])+ "og"+ str(labels2[0]) + ", velg en underkategori")
+                st.write("**Takk, vi er ferdig**")
+            
+            if st.session_state["predikere"] and st.session_state["button3"] and st.session_state["button9"]:
+                st.write("Du har valgt: "+str(labels[2])+ "og"+ str(labels2[1]) + ", velg en underkategori")
+                st.write("**Takk, vi er ferdig**")
     
     else: #if more than one file is uploaded
 
@@ -270,5 +306,7 @@ if img is not None:
                     st.session_state["button2"] = not st.session_state["button2"]
                 if st.button(str(top_categories[2])):
                     st.session_state["button3"] = not st.session_state["button3"]
+                
+        ##implement the second prediction 
 
 
